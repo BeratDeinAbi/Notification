@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, TrendingUp, TrendingDown, Target, StopCircle, Activity, Loader2, BarChart3, XCircle, Calendar, CheckCircle, Percent } from 'lucide-react';
+import { Play, TrendingUp, TrendingDown, Target, StopCircle, Activity, Loader2, BarChart3, XCircle } from 'lucide-react';
 import * as TechnicalIndicators from 'technicalindicators';
 
 const RSI = TechnicalIndicators.RSI;

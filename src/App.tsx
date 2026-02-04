@@ -17,6 +17,8 @@ import SentimentIndicator from './components/SentimentIndicator';
 import StrategyGuide from './components/StrategyGuide';
 import RSIHeatmap from './components/RSIHeatmap';
 import { Layers, Plus, RefreshCw, Loader2, BellOff, Edit3, Trash2, CheckCircle, Clock, BellRing, LayoutGrid, List, Sun, Moon } from 'lucide-react';
+import MobileNavbar from './components/MobileNavbar';
+
 
 // ... helper functions (calculateRSI, calculateMACD, load functions) remain the same
 
@@ -320,18 +322,30 @@ const App: React.FC = () => {
 
       <DynamicIsland toasts={toasts} onRemove={removeToast} />
 
-      {/* Background Ambience handled by global CSS on body, but we can add an overlay if needed */}
+      {/* Background Ambience handled by global CSS on body */}
 
-      <Sidebar
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isCollapsed={isSidebarCollapsed}
+          setIsCollapsed={setIsSidebarCollapsed}
+          onOpenSettings={() => { }}
+          onOpenDonation={() => setShowDonationModal(true)}
+          signalCount={signals.length}
+          theme={theme}
+        />
+      </div>
+
+      {/* Mobile Bottom Navbar */}
+      <MobileNavbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        isCollapsed={isSidebarCollapsed}
-        setIsCollapsed={setIsSidebarCollapsed}
         onOpenSettings={() => { }}
-        onOpenDonation={() => setShowDonationModal(true)}
         signalCount={signals.length}
-        theme={theme}
       />
+
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
         {/* Modern Header */}
@@ -407,7 +421,8 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 relative custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative custom-scrollbar pb-24 md:pb-0">
+
           <div className="max-w-7xl mx-auto pb-20 animate-slide-up">
             {activeTab === 'DASHBOARD' && (
               <>
