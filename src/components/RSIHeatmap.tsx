@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { RefreshCw, Loader2, TrendingUp, TrendingDown, Bitcoin, BarChart3 } from 'lucide-react';
 
 interface RSICoin {
     symbol: string;
@@ -10,6 +10,7 @@ interface RSICoin {
 }
 
 type HeatmapTimeframe = '15m' | '1h' | '4h' | '1d' | '1w';
+type MarketType = 'CRYPTO' | 'STOCK';
 
 const RSI_ZONES = [
     { min: 70, max: 100, label: 'Überkauft', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.12)' },
@@ -25,6 +26,15 @@ const TIMEFRAME_OPTIONS: { value: HeatmapTimeframe; label: string }[] = [
     { value: '4h', label: '4 Stunden' },
     { value: '1d', label: '1 Tag' },
     { value: '1w', label: '1 Woche' },
+];
+
+const TWELVE_DATA_API_KEY = '7ec0909c64a74e1baef4ba143b67ec35';
+
+// Popular US stocks for RSI heatmap
+const STOCK_LIST = [
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'V', 'WMT',
+    'JNJ', 'PG', 'MA', 'UNH', 'HD', 'DIS', 'BAC', 'ADBE', 'CRM', 'NFLX',
+    'PFE', 'CSCO', 'INTC', 'VZ', 'KO', 'PEP', 'MRK', 'ABT', 'T', 'XOM'
 ];
 
 // Calculate RSI from price data
@@ -63,9 +73,48 @@ const RSIHeatmap: React.FC = () => {
     const [coins, setCoins] = useState<RSICoin[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [timeframe, setTimeframe] = useState<HeatmapTimeframe>('4h');
+    const [marketType, setMarketType] = useState<MarketType>('CRYPTO');
     const [hoveredCoin, setHoveredCoin] = useState<RSICoin | null>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+    const fetchStockData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const stockPromises = STOCK_LIST.map(async (symbol) => {
+                try {
+                    const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=50&apikey=${TWELVE_DATA_API_KEY}`);
+                    const data = await res.json();
+
+                    if (data.status === 'error' || !data.values) return null;
+
+                    const closes = data.values.map((v: any) => parseFloat(v.close)).reverse();
+                    const rsi = calculateRSI(closes);
+                    const latestClose = parseFloat(data.values[0].close);
+                    const prevClose = parseFloat(data.values[1]?.close || data.values[0].close);
+                    const change = ((latestClose - prevClose) / prevClose) * 100;
+
+                    return {
+                        symbol,
+                        name: symbol,
+                        rsi,
+                        price: latestClose,
+                        change24h: change
+                    } as RSICoin;
+                } catch {
+                    return null;
+                }
+            });
+
+            const results = (await Promise.all(stockPromises)).filter((c): c is RSICoin => c !== null);
+            setCoins(results);
+            setLastUpdate(new Date());
+        } catch (error) {
+            console.error('Error fetching stock data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     const fetchTop100Cryptos = useCallback(async () => {
         setIsLoading(true);
@@ -138,8 +187,20 @@ const RSIHeatmap: React.FC = () => {
     }, [timeframe]);
 
     useEffect(() => {
-        fetchTop100Cryptos();
-    }, [fetchTop100Cryptos]);
+        if (marketType === 'CRYPTO') {
+            fetchTop100Cryptos();
+        } else {
+            fetchStockData();
+        }
+    }, [marketType, fetchTop100Cryptos, fetchStockData]);
+
+    const handleRefresh = () => {
+        if (marketType === 'CRYPTO') {
+            fetchTop100Cryptos();
+        } else {
+            fetchStockData();
+        }
+    };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         setMousePos({ x: e.clientX, y: e.clientY });
@@ -161,21 +222,39 @@ const RSIHeatmap: React.FC = () => {
             {/* Header Controls */}
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    {/* Timeframe Selector */}
+                    {/* Market Type Toggle */}
                     <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 backdrop-blur-md">
-                        {TIMEFRAME_OPTIONS.map(opt => (
-                            <button
-                                key={opt.value}
-                                onClick={() => setTimeframe(opt.value)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeframe === opt.value
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                    }`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
+                        <button
+                            onClick={() => setMarketType('CRYPTO')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${marketType === 'CRYPTO' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Bitcoin size={16} /> Krypto
+                        </button>
+                        <button
+                            onClick={() => setMarketType('STOCK')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${marketType === 'STOCK' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <BarChart3 size={16} /> Aktien
+                        </button>
                     </div>
+
+                    {/* Timeframe Selector - only show for crypto */}
+                    {marketType === 'CRYPTO' && (
+                        <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 backdrop-blur-md">
+                            {TIMEFRAME_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setTimeframe(opt.value)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeframe === opt.value
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -188,7 +267,7 @@ const RSIHeatmap: React.FC = () => {
 
                     {/* Refresh Button */}
                     <button
-                        onClick={fetchTop100Cryptos}
+                        onClick={handleRefresh}
                         disabled={isLoading}
                         className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-300 hover:text-white disabled:opacity-50"
                     >

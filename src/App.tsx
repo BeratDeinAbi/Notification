@@ -545,12 +545,28 @@ const App: React.FC = () => {
                 {dashboardView === 'PRICES' && (
                   <div className="space-y-8">
                     <section>
-                      <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-lg shadow-orange-500/20">
-                          <Layers size={18} className="text-white" />
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                          <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-lg shadow-orange-500/20">
+                            <Layers size={18} className="text-white" />
+                          </div>
+                          {marketFilter === 'CRYPTO' ? 'Top Krypto Assets' : marketFilter === 'STOCK' ? 'Top Aktien' : 'Rohstoffe'}
+                        </h2>
+                        <div className="flex bg-white/5 border border-white/10 rounded-xl p-1">
+                          <button
+                            onClick={() => setMarketFilter('CRYPTO')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${marketFilter === 'CRYPTO' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                          >
+                            Krypto
+                          </button>
+                          <button
+                            onClick={() => setMarketFilter('STOCK')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${marketFilter === 'STOCK' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                          >
+                            Aktien
+                          </button>
                         </div>
-                        Top Krypto Assets
-                      </h2>
+                      </div>
                       <div className="glass-panel rounded-3xl border border-white/5 overflow-hidden">
                         <AssetTable assets={assets.filter(a => a.type === marketFilter)} timeframe={selectedTimeframe} />
                       </div>
