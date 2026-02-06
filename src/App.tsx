@@ -87,6 +87,18 @@ const CRYPTO_SYMBOLS = [
   { symbol: 'PAXGUSDT', name: 'Gold (Pax)', id: 'gold' }
 ];
 
+const STOCK_SYMBOLS = [
+  { symbol: 'AAPL', name: 'Apple', id: 'aapl' },
+  { symbol: 'MSFT', name: 'Microsoft', id: 'msft' },
+  { symbol: 'GOOGL', name: 'Google', id: 'googl' },
+  { symbol: 'AMZN', name: 'Amazon', id: 'amzn' },
+  { symbol: 'TSLA', name: 'Tesla', id: 'tsla' },
+  { symbol: 'META', name: 'Meta', id: 'meta' },
+  { symbol: 'NVDA', name: 'Nvidia', id: 'nvda' }
+];
+
+const TWELVE_DATA_API_KEY = '7ec0909c64a74e1baef4ba143b67ec35';
+
 const RULES_STORAGE_KEY = 'notification_app_rules';
 const SIGNALS_STORAGE_KEY = 'notification_app_signals';
 
@@ -258,10 +270,10 @@ const App: React.FC = () => {
   const fetchBinanceData = async () => {
     setIsLoading(true);
     try {
-      const stockAssets = assets.filter(a => a.type === 'STOCK');
       const timeframeToBinance: Record<Timeframe, string> = { '15m': '15m', '2h': '2h', '4h': '4h', '1d': '1d', '1w': '1w' };
       const intervals: Timeframe[] = ['15m', '2h', '4h', '1d', '1w'];
 
+      // Fetch Crypto from Binance
       const cryptoPromises = CRYPTO_SYMBOLS.map(async (coin) => {
         const results: any = {};
         await Promise.all(intervals.map(async (interval) => {
@@ -282,7 +294,6 @@ const App: React.FC = () => {
           if (interval === '1d') results.price = close;
         }));
 
-        // Determine type based on ID
         const assetType: AssetType = coin.id === 'gold' ? 'COMMODITY' : 'CRYPTO';
 
         return {
@@ -294,8 +305,61 @@ const App: React.FC = () => {
         } as Asset;
       });
 
+      // Fetch Stocks from Twelve Data
+      const stockPromises = STOCK_SYMBOLS.map(async (stock) => {
+        const results: any = {};
+
+        // Twelve Data has rate limits, so we fetch only daily for now and use it for all timeframes
+        // For production, you'd want to batch these or cache them
+        try {
+          const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${stock.symbol}&interval=1day&outputsize=200&apikey=${TWELVE_DATA_API_KEY}`);
+          const data = await res.json();
+
+          if (data.status === 'error' || !data.values) {
+            console.warn(`Twelve Data error for ${stock.symbol}:`, data.message);
+            return null;
+          }
+
+          const closes = data.values.map((v: any) => parseFloat(v.close)).reverse();
+          const rsi = calculateRSI(closes, 14);
+          const macd = calculateMACD(closes);
+
+          const latestClose = parseFloat(data.values[0].close);
+          const prevClose = parseFloat(data.values[1]?.close || data.values[0].close);
+          const change = ((latestClose - prevClose) / prevClose) * 100;
+
+          const macdResult = {
+            macd: macd[macd.length - 1].MACD,
+            signal: macd[macd.length - 1].signal,
+            histogram: macd[macd.length - 1].histogram
+          };
+
+          // Use same data for all timeframes (API limitation on free tier)
+          intervals.forEach(interval => {
+            results[interval] = {
+              rsi: rsi[rsi.length - 1],
+              macd: macdResult,
+              change: change
+            };
+          });
+          results.price = latestClose;
+
+          return {
+            id: stock.id, symbol: stock.symbol, name: stock.name, type: 'STOCK' as AssetType,
+            price: results.price || 0, change24h: change,
+            change: { '15m': change, '2h': change, '4h': change, '1d': change, '1w': change },
+            rsi: { '15m': results['1d'].rsi, '2h': results['1d'].rsi, '4h': results['1d'].rsi, '1d': results['1d'].rsi, '1w': results['1d'].rsi },
+            macd: { '15m': macdResult, '2h': macdResult, '4h': macdResult, '1d': macdResult, '1w': macdResult }
+          } as Asset;
+        } catch (err) {
+          console.error(`Error fetching ${stock.symbol}:`, err);
+          return null;
+        }
+      });
+
       const fetchedCryptos = await Promise.all(cryptoPromises);
-      const newAssets = [...fetchedCryptos, ...stockAssets];
+      const fetchedStocks = (await Promise.all(stockPromises)).filter(Boolean) as Asset[];
+      const newAssets = [...fetchedCryptos, ...fetchedStocks];
 
       if (prevAssetsRef.current.length > 0) checkAlarms(newAssets, prevAssetsRef.current);
       prevAssetsRef.current = newAssets;
@@ -502,7 +566,7 @@ const App: React.FC = () => {
                   <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Clock size={16} className="text-primary" /> Aktive Regeln</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {activeRules.map(r => (
-                      <div key={r.id} className="glass-panel rounded-2xl p-6 relative group hover:-translate-y-1 transition-all duration-300">
+                      <div key={r.id} className={`glass-panel rounded-2xl p-6 relative group hover:-translate-y-1 transition-all duration-300 ${r.active ? 'animate-pulse-glow' : ''}`}>
                         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all"></div>
 
                         <div className="flex justify-between items-start mb-4 relative z-10">
@@ -510,7 +574,7 @@ const App: React.FC = () => {
                             <span className="font-bold text-lg text-white block">{getAssetLabel(r.assetId)}</span>
                             <span className="text-xs font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">{r.timeframe}</span>
                           </div>
-                          <div className={`w-3 h-3 rounded-full ${r.active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-700'}`}></div>
+                          <div className={`w-3 h-3 rounded-full ${r.active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse-dot' : 'bg-slate-700'}`}></div>
                         </div>
 
                         <div className="text-sm text-slate-300 mb-6 space-y-2 relative z-10 min-h-[60px]">
@@ -539,7 +603,11 @@ const App: React.FC = () => {
                   </div>
                 </section>
                 <div className="glass-panel rounded-3xl p-6">
-                  <SignalFeed signals={signals} />
+                  <SignalFeed
+                    signals={signals}
+                    onDeleteSignal={(id) => setSignals(prev => prev.filter(s => s.id !== id))}
+                    onClearAllSignals={() => setSignals([])}
+                  />
                 </div>
 
                 {triggeredRules.length > 0 && <section>
@@ -551,7 +619,10 @@ const App: React.FC = () => {
                           <span className="font-bold text-white">{getAssetLabel(r.assetId)}</span>
                           <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Ausgelöst</span>
                         </div>
-                        <button onClick={() => handleResetTriggered(r.id)} className="w-full py-2 mt-2 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 transition-colors font-medium">Reaktivieren</button>
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={() => handleResetTriggered(r.id)} className="flex-1 py-2 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 transition-colors font-medium">Reaktivieren</button>
+                          <button onClick={() => handleDeleteRule(r.id)} className="flex-1 py-2 text-xs bg-rose-500/10 text-rose-400 rounded hover:bg-rose-500/20 transition-colors font-medium">Löschen</button>
+                        </div>
                       </div>
                     ))}
                   </div>
