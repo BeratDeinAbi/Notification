@@ -305,19 +305,17 @@ const App: React.FC = () => {
         } as Asset;
       });
 
-      // Fetch Stocks from Twelve Data
-      const stockPromises = STOCK_SYMBOLS.map(async (stock) => {
-        const results: any = {};
-
-        // Twelve Data has rate limits, so we fetch only daily for now and use it for all timeframes
-        // For production, you'd want to batch these or cache them
+      // Fetch Stocks from Twelve Data - sequential to avoid rate limit (8 req/min on free tier)
+      const fetchedStocks: Asset[] = [];
+      for (let i = 0; i < STOCK_SYMBOLS.length; i++) {
+        const stock = STOCK_SYMBOLS[i];
         try {
           const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${stock.symbol}&interval=1day&outputsize=200&apikey=${TWELVE_DATA_API_KEY}`);
           const data = await res.json();
 
           if (data.status === 'error' || !data.values) {
             console.warn(`Twelve Data error for ${stock.symbol}:`, data.message);
-            return null;
+            continue;
           }
 
           const closes = data.values.map((v: any) => parseFloat(v.close)).reverse();
@@ -334,31 +332,24 @@ const App: React.FC = () => {
             histogram: macd[macd.length - 1].histogram
           };
 
-          // Use same data for all timeframes (API limitation on free tier)
-          intervals.forEach(interval => {
-            results[interval] = {
-              rsi: rsi[rsi.length - 1],
-              macd: macdResult,
-              change: change
-            };
-          });
-          results.price = latestClose;
-
-          return {
+          fetchedStocks.push({
             id: stock.id, symbol: stock.symbol, name: stock.name, type: 'STOCK' as AssetType,
-            price: results.price || 0, change24h: change,
+            price: latestClose, change24h: change,
             change: { '15m': change, '2h': change, '4h': change, '1d': change, '1w': change },
-            rsi: { '15m': results['1d'].rsi, '2h': results['1d'].rsi, '4h': results['1d'].rsi, '1d': results['1d'].rsi, '1w': results['1d'].rsi },
+            rsi: { '15m': rsi[rsi.length - 1], '2h': rsi[rsi.length - 1], '4h': rsi[rsi.length - 1], '1d': rsi[rsi.length - 1], '1w': rsi[rsi.length - 1] },
             macd: { '15m': macdResult, '2h': macdResult, '4h': macdResult, '1d': macdResult, '1w': macdResult }
-          } as Asset;
+          } as Asset);
+
+          // Delay between requests to avoid rate limit (8 req/min = 7.5s between requests)
+          if (i < STOCK_SYMBOLS.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 8000));
+          }
         } catch (err) {
           console.error(`Error fetching ${stock.symbol}:`, err);
-          return null;
         }
-      });
+      }
 
       const fetchedCryptos = await Promise.all(cryptoPromises);
-      const fetchedStocks = (await Promise.all(stockPromises)).filter(Boolean) as Asset[];
       const newAssets = [...fetchedCryptos, ...fetchedStocks];
 
       if (prevAssetsRef.current.length > 0) checkAlarms(newAssets, prevAssetsRef.current);

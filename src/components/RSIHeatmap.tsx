@@ -81,12 +81,21 @@ const RSIHeatmap: React.FC = () => {
     const fetchStockData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const stockPromises = STOCK_LIST.map(async (symbol) => {
+            // Sequential fetching with delays to respect rate limit (8 req/min)
+            // Only fetch first 8 stocks to stay within rate limit for one minute
+            const stocksToFetch = STOCK_LIST.slice(0, 8);
+            const results: RSICoin[] = [];
+
+            for (let i = 0; i < stocksToFetch.length; i++) {
+                const symbol = stocksToFetch[i];
                 try {
                     const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=50&apikey=${TWELVE_DATA_API_KEY}`);
                     const data = await res.json();
 
-                    if (data.status === 'error' || !data.values) return null;
+                    if (data.status === 'error' || !data.values) {
+                        console.warn(`Twelve Data error for ${symbol}:`, data.message);
+                        continue;
+                    }
 
                     const closes = data.values.map((v: any) => parseFloat(v.close)).reverse();
                     const rsi = calculateRSI(closes);
@@ -94,20 +103,26 @@ const RSIHeatmap: React.FC = () => {
                     const prevClose = parseFloat(data.values[1]?.close || data.values[0].close);
                     const change = ((latestClose - prevClose) / prevClose) * 100;
 
-                    return {
+                    results.push({
                         symbol,
                         name: symbol,
                         rsi,
                         price: latestClose,
                         change24h: change
-                    } as RSICoin;
-                } catch {
-                    return null;
-                }
-            });
+                    });
 
-            const results = (await Promise.all(stockPromises)).filter((c): c is RSICoin => c !== null);
-            setCoins(results);
+                    // Update state progressively so user sees data appearing
+                    setCoins([...results]);
+
+                    // Delay between requests (8 req/min = ~7.5s between requests)
+                    if (i < stocksToFetch.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 8000));
+                    }
+                } catch (err) {
+                    console.error(`Error fetching ${symbol}:`, err);
+                }
+            }
+
             setLastUpdate(new Date());
         } catch (error) {
             console.error('Error fetching stock data:', error);
