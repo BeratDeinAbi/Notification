@@ -6,7 +6,7 @@
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Minimalist Dark Scrollbar */
+/* Clean Light Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -17,35 +17,31 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Base Styles */
 body {
-  background-color: #050505;
-  /* Deep matte black */
-  color: #f8fafc;
+  background-color: #c5ccd3;
+  color: #1a1a1a;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Glassmorphism Utilities */
+/* White Card Panels */
 .glass-panel {
-  background: rgba(20, 20, 20, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .glass-panel-lighter {
-  background: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #f9fafb;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* Mobile SafeArea */
@@ -84,16 +80,16 @@ body {
   animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Live Pulse Animations */
+/* Pulse Animations */
 @keyframes pulse-glow {
 
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1);
   }
 
   50% {
-    box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 12px 2px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -115,11 +111,11 @@ body {
   0% {
     opacity: 0;
     transform: translateX(-20px);
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(0, 0, 0, 0.05);
   }
 
   50% {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(0, 0, 0, 0.03);
   }
 
   100% {

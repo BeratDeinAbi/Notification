@@ -19,7 +19,7 @@ const STRATEGIES: Strategy[] = [
         title: 'RSI Divergenz',
         icon: <Activity size={24} />,
         difficulty: 'MEDIUM',
-        color: 'text-purple-400',
+        color: 'text-purple-600',
         description: 'Eine Divergenz tritt auf, wenn der Preis ein neues Hoch/Tief erreicht, der RSI aber nicht. Dies deutet auf eine nachlassende Trendstärke hin.',
         buySignal: 'Preis fällt auf tieferes Tief, aber RSI macht ein höheres Tief (Bullish Divergence).',
         sellSignal: 'Preis steigt auf höheres Hoch, aber RSI macht ein tieferes Hoch (Bearish Divergence).',
@@ -30,7 +30,7 @@ const STRATEGIES: Strategy[] = [
         title: 'MACD Golden Cross',
         icon: <TrendingUp size={24} />,
         difficulty: 'EASY',
-        color: 'text-emerald-400',
+        color: 'text-emerald-600',
         description: 'Der MACD (Moving Average Convergence Divergence) zeigt Trendwechsel an. Ein "Cross" ist eines der zuverlässigsten Signale in Trendmärkten.',
         buySignal: 'Die schnelle MACD-Linie kreuzt die Signallinie von unten nach oben (Golden Cross).',
         sellSignal: 'Die schnelle MACD-Linie kreuzt die Signallinie von oben nach unten (Death Cross).',
@@ -41,7 +41,7 @@ const STRATEGIES: Strategy[] = [
         title: 'Bollinger Bands Squeeze',
         icon: <BarChart2 size={24} />,
         difficulty: 'HARD',
-        color: 'text-blue-400',
+        color: 'text-blue-600',
         description: 'Wenn sich die Bollinger Bänder extrem zusammenziehen (Squeeze), deutet dies auf eine bevorstehende explosive Bewegung hin.',
         buySignal: 'Bänder öffnen sich und Preis bricht durch das obere Band aus.',
         sellSignal: 'Bänder öffnen sich und Preis bricht durch das untere Band ein.',
@@ -52,7 +52,7 @@ const STRATEGIES: Strategy[] = [
         title: 'Fear & Greed Contrarian',
         icon: <Zap size={24} />,
         difficulty: 'EASY',
-        color: 'text-amber-400',
+        color: 'text-amber-600',
         description: '"Sei gierig, wenn andere ängstlich sind". Extreme Marktstimmung ist oft ein Kontra-Indikator.',
         buySignal: 'Extreme Fear (< 20). Panikverkäufe sind oft der Boden.',
         sellSignal: 'Extreme Greed (> 80). FOMO treibt den Preis oft zu hoch.',
@@ -65,13 +65,12 @@ const StrategyGuide: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-fade-in pb-20">
-            <div className="bg-surface rounded-2xl border border-subtle p-8 text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-emerald-500"></div>
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center relative overflow-hidden shadow-sm">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gray-900 via-gray-600 to-gray-400"></div>
 
-                <BookOpen size={48} className="mx-auto text-primary mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">Master Class Trading Strategien</h2>
-                <p className="text-zinc-400 max-w-lg mx-auto">
+                <BookOpen size={48} className="mx-auto text-gray-900 mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Master Class Trading Strategien</h2>
+                <p className="text-gray-500 max-w-lg mx-auto">
                     Hier lernst du die effektivsten Methoden, um Märkte zu analysieren.
                     Diese Strategien werden von Profis weltweit genutzt.
                 </p>
@@ -82,56 +81,56 @@ const StrategyGuide: React.FC = () => {
                     <div
                         key={strategy.id}
                         className={`
-                            bg-surface border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer group
-                            ${selectedId === strategy.id ? 'border-primary shadow-[0_0_20px_rgba(163,230,53,0.1)] ring-1 ring-primary' : 'border-subtle hover:border-zinc-600'}
+                            bg-white border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer group shadow-sm
+                            ${selectedId === strategy.id ? 'border-gray-900 shadow-md ring-1 ring-gray-900' : 'border-gray-100 hover:border-gray-300'}
                         `}
                         onClick={() => setSelectedId(selectedId === strategy.id ? null : strategy.id)}
                     >
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-3 rounded-xl bg-zinc-900 ${strategy.color}`}>
+                                    <div className={`p-3 rounded-xl bg-gray-50 ${strategy.color}`}>
                                         {strategy.icon}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white text-lg">{strategy.title}</h3>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded border ${strategy.difficulty === 'EASY' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' :
-                                                strategy.difficulty === 'MEDIUM' ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' :
-                                                    'border-rose-500/30 text-rose-400 bg-rose-500/10'
+                                        <h3 className="font-bold text-gray-900 text-lg">{strategy.title}</h3>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded border ${strategy.difficulty === 'EASY' ? 'border-emerald-200 text-emerald-600 bg-emerald-50' :
+                                            strategy.difficulty === 'MEDIUM' ? 'border-amber-200 text-amber-600 bg-amber-50' :
+                                                'border-rose-200 text-rose-600 bg-rose-50'
                                             }`}>
                                             {strategy.difficulty}
                                         </span>
                                     </div>
                                 </div>
-                                <ArrowRight className={`text-zinc-600 transition-transform duration-300 ${selectedId === strategy.id ? 'rotate-90 text-primary' : 'group-hover:translate-x-1'}`} />
+                                <ArrowRight className={`text-gray-400 transition-transform duration-300 ${selectedId === strategy.id ? 'rotate-90 text-gray-900' : 'group-hover:translate-x-1'}`} />
                             </div>
 
-                            <p className="text-zinc-400 text-sm leading-relaxed mb-4">
+                            <p className="text-gray-500 text-sm leading-relaxed mb-4">
                                 {strategy.description}
                             </p>
 
                             {selectedId === strategy.id && (
-                                <div className="mt-6 space-y-4 animate-slide-down border-t border-subtle pt-4">
+                                <div className="mt-6 space-y-4 animate-slide-down border-t border-gray-100 pt-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="bg-zinc-900/50 p-3 rounded-lg border border-emerald-500/20">
-                                            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs mb-1 uppercase">
+                                        <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                                            <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs mb-1 uppercase">
                                                 <Check size={14} /> Buy Signal
                                             </div>
-                                            <p className="text-zinc-300 text-xs">{strategy.buySignal}</p>
+                                            <p className="text-gray-600 text-xs">{strategy.buySignal}</p>
                                         </div>
-                                        <div className="bg-zinc-900/50 p-3 rounded-lg border border-rose-500/20">
-                                            <div className="flex items-center gap-2 text-rose-400 font-bold text-xs mb-1 uppercase">
+                                        <div className="bg-rose-50 p-3 rounded-lg border border-rose-100">
+                                            <div className="flex items-center gap-2 text-rose-600 font-bold text-xs mb-1 uppercase">
                                                 <X size={14} /> Sell Signal
                                             </div>
-                                            <p className="text-zinc-300 text-xs">{strategy.sellSignal}</p>
+                                            <p className="text-gray-600 text-xs">{strategy.sellSignal}</p>
                                         </div>
                                     </div>
 
-                                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex gap-3">
-                                        <AlertTriangle size={18} className="text-primary flex-shrink-0 mt-0.5" />
+                                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex gap-3">
+                                        <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                                         <div>
-                                            <span className="text-primary font-bold text-xs uppercase block mb-0.5">Profi Tipp</span>
-                                            <p className="text-zinc-300 text-sm italic">{strategy.proTip}</p>
+                                            <span className="text-amber-600 font-bold text-xs uppercase block mb-0.5">Profi Tipp</span>
+                                            <p className="text-gray-600 text-sm italic">{strategy.proTip}</p>
                                         </div>
                                     </div>
                                 </div>

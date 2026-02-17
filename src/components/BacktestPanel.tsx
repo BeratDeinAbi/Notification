@@ -44,7 +44,6 @@ const CRYPTO_OPTIONS = [
 ];
 
 const BacktestPanel: React.FC = () => {
-  // Settings
   const [selectedCrypto, setSelectedCrypto] = useState('BTCUSDT');
   const [timeframeDays, setTimeframeDays] = useState(90);
   const [rsiTimeframe, setRsiTimeframe] = useState<'4h' | '1d'>('4h');
@@ -53,7 +52,6 @@ const BacktestPanel: React.FC = () => {
   const [takeProfit, setTakeProfit] = useState(10);
   const [stopLoss, setStopLoss] = useState(10);
 
-  // State
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BacktestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,10 +62,8 @@ const BacktestPanel: React.FC = () => {
     setResult(null);
 
     try {
-      // Fetch historical data from Binance based on selected RSI timeframe
-      // For 4h: 6 candles per day, for 1d: 1 candle per day
       const candlesPerDay = rsiTimeframe === '4h' ? 6 : 1;
-      const limit = Math.min(timeframeDays * candlesPerDay, 1000); // Binance limit is 1000
+      const limit = Math.min(timeframeDays * candlesPerDay, 1000);
       const res = await fetch(
         `https://api.binance.com/api/v3/klines?symbol=${selectedCrypto}&interval=${rsiTimeframe}&limit=${limit}`
       );
@@ -77,7 +73,6 @@ const BacktestPanel: React.FC = () => {
         throw new Error('Keine Daten verfügbar');
       }
 
-      // Extract close prices and timestamps
       const candles = data.map((c: any) => ({
         timestamp: new Date(c[0]),
         open: parseFloat(c[1]),
@@ -86,17 +81,14 @@ const BacktestPanel: React.FC = () => {
         close: parseFloat(c[4]),
       }));
 
-      // Calculate RSI for all candles
       const closes = candles.map((c: any) => c.close);
       const rsiValues = RSI.calculate({ values: closes, period: 14 });
 
-      // Align RSI with candles (RSI starts after 14 periods)
       const candlesWithRsi = candles.slice(14).map((candle: any, i: number) => ({
         ...candle,
         rsi: rsiValues[i],
       }));
 
-      // Run backtest logic
       const trades: Trade[] = [];
       let inTrade = false;
       let entryCandle: any = null;
@@ -106,7 +98,6 @@ const BacktestPanel: React.FC = () => {
         const candle = candlesWithRsi[i];
 
         if (!inTrade) {
-          // Check entry condition
           const shouldEnter = rsiCondition === 'below'
             ? candle.rsi < rsiThreshold
             : candle.rsi > rsiThreshold;
@@ -117,11 +108,9 @@ const BacktestPanel: React.FC = () => {
             entryRsi = candle.rsi;
           }
         } else {
-          // Check exit conditions
           const priceChange = ((candle.close - entryCandle.close) / entryCandle.close) * 100;
 
           if (priceChange >= takeProfit) {
-            // Take profit hit
             trades.push({
               entryDate: entryCandle.timestamp,
               exitDate: candle.timestamp,
@@ -134,7 +123,6 @@ const BacktestPanel: React.FC = () => {
             });
             inTrade = false;
           } else if (priceChange <= -stopLoss) {
-            // Stop loss hit
             trades.push({
               entryDate: entryCandle.timestamp,
               exitDate: candle.timestamp,
@@ -150,7 +138,6 @@ const BacktestPanel: React.FC = () => {
         }
       }
 
-      // Calculate statistics
       const winningTrades = trades.filter(t => t.outcome === 'win');
       const losingTrades = trades.filter(t => t.outcome === 'loss');
       const totalProfit = trades.reduce((sum, t) => sum + t.profitPercent, 0);
@@ -172,7 +159,7 @@ const BacktestPanel: React.FC = () => {
         averageLoss: avgLoss,
         maxProfit: trades.length > 0 ? Math.max(...trades.map(t => t.profitPercent)) : 0,
         maxLoss: trades.length > 0 ? Math.min(...trades.map(t => t.profitPercent)) : 0,
-        trades: trades.slice(-20).reverse(), // Last 20 trades
+        trades: trades.slice(-20).reverse(),
       });
     } catch (e: any) {
       setError(e.message || 'Fehler beim Backtesting');
@@ -186,39 +173,37 @@ const BacktestPanel: React.FC = () => {
     <div className="animate-fade-in pb-10">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 tracking-tight flex items-center gap-3">
-          <BarChart3 className="text-primary" size={28} />
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
+          <BarChart3 className="text-gray-500" size={28} />
           Backtesting Simulator
         </h1>
-        <p className="text-slate-400 mt-2 text-lg">Validiere deine Strategien mit echten historischen Marktdaten.</p>
+        <p className="text-gray-500 mt-2 text-lg">Validiere deine Strategien mit echten historischen Marktdaten.</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
 
         {/* Settings Panel */}
         <div className="xl:col-span-1 space-y-6">
-          <div className="glass-panel p-6 rounded-3xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -z-10"></div>
-
-            <h2 className="text-white font-bold mb-6 flex items-center gap-2 text-lg">
-              <Activity size={20} className="text-primary" />
+          <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+            <h2 className="text-gray-900 font-bold mb-6 flex items-center gap-2 text-lg">
+              <Activity size={20} className="text-gray-500" />
               Konfiguration
             </h2>
 
             <div className="space-y-6">
               {/* Asset & Time */}
               <div className="space-y-4">
-                <label className="text-xs uppercase font-bold text-slate-500 tracking-wider">Markt & Zeit</label>
+                <label className="text-xs uppercase font-bold text-gray-400 tracking-wider">Markt & Zeit</label>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <select
                       value={selectedCrypto}
                       onChange={(e) => setSelectedCrypto(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white focus:border-primary focus:outline-none transition-all hover:bg-white/10"
+                      className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-gray-900 focus:border-gray-400 focus:outline-none transition-all hover:bg-gray-100"
                     >
                       {CRYPTO_OPTIONS.map((c) => (
-                        <option key={c.symbol} value={c.symbol} className="bg-slate-900">{c.name}</option>
+                        <option key={c.symbol} value={c.symbol}>{c.name}</option>
                       ))}
                     </select>
                   </div>
@@ -226,20 +211,20 @@ const BacktestPanel: React.FC = () => {
                   <select
                     value={timeframeDays}
                     onChange={(e) => setTimeframeDays(Number(e.target.value))}
-                    className="bg-white/5 border border-white/10 p-3 rounded-xl text-white focus:border-primary focus:outline-none hover:bg-white/10 transition-all text-sm"
+                    className="bg-gray-50 border border-gray-200 p-3 rounded-xl text-gray-900 focus:border-gray-400 focus:outline-none hover:bg-gray-100 transition-all text-sm"
                   >
-                    <option value={7} className="bg-slate-900">7 Tage</option>
-                    <option value={30} className="bg-slate-900">30 Tage</option>
-                    <option value={90} className="bg-slate-900">90 Tage</option>
-                    <option value={180} className="bg-slate-900">180 Tage</option>
+                    <option value={7}>7 Tage</option>
+                    <option value={30}>30 Tage</option>
+                    <option value={90}>90 Tage</option>
+                    <option value={180}>180 Tage</option>
                   </select>
 
-                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                  <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
                     {(['4h', '1d'] as const).map((tf) => (
                       <button
                         key={tf}
                         onClick={() => setRsiTimeframe(tf)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${rsiTimeframe === tf ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:text-white'}`}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${rsiTimeframe === tf ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-gray-700'}`}
                       >
                         {tf}
                       </button>
@@ -248,22 +233,22 @@ const BacktestPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="h-px bg-white/5 w-full"></div>
+              <div className="h-px bg-gray-100 w-full"></div>
 
               {/* Strategy Parameters */}
               <div className="space-y-4">
-                <label className="text-xs uppercase font-bold text-slate-500 tracking-wider">Strategie Logik</label>
+                <label className="text-xs uppercase font-bold text-gray-400 tracking-wider">Strategie Logik</label>
 
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-sm text-slate-300">Kaufe wenn RSI</span>
+                    <span className="text-sm text-gray-700">Kaufe wenn RSI</span>
                     <select
                       value={rsiCondition}
                       onChange={(e) => setRsiCondition(e.target.value as 'below' | 'above')}
-                      className="bg-transparent border-b border-primary text-primary font-bold focus:outline-none text-center"
+                      className="bg-transparent border-b border-gray-900 text-gray-900 font-bold focus:outline-none text-center"
                     >
-                      <option value="below" className="bg-slate-900">unter</option>
-                      <option value="above" className="bg-slate-900">über</option>
+                      <option value="below">unter</option>
+                      <option value="above">über</option>
                     </select>
                   </div>
 
@@ -274,26 +259,26 @@ const BacktestPanel: React.FC = () => {
                       max="90"
                       value={rsiThreshold}
                       onChange={(e) => setRsiThreshold(Number(e.target.value))}
-                      className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-900"
                     />
-                    <div className="absolute top-0 left-0 w-full flex justify-between text-xs text-slate-500 font-mono">
+                    <div className="absolute top-0 left-0 w-full flex justify-between text-xs text-gray-400 font-mono">
                       <span>10</span>
-                      <span className="text-primary font-bold text-base -mt-1">{rsiThreshold}</span>
+                      <span className="text-gray-900 font-bold text-base -mt-1">{rsiThreshold}</span>
                       <span>90</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="h-px bg-white/5 w-full"></div>
+              <div className="h-px bg-gray-100 w-full"></div>
 
               {/* Risk Management */}
               <div className="space-y-4">
-                <label className="text-xs uppercase font-bold text-slate-500 tracking-wider">Risiko Management</label>
+                <label className="text-xs uppercase font-bold text-gray-400 tracking-wider">Risiko Management</label>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 mb-2">
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                    <label className="flex items-center gap-2 text-xs font-bold text-emerald-600 mb-2">
                       <Target size={14} /> Take Profit
                     </label>
                     <div className="flex items-center gap-2">
@@ -301,14 +286,14 @@ const BacktestPanel: React.FC = () => {
                         type="number"
                         value={takeProfit}
                         onChange={(e) => setTakeProfit(Number(e.target.value))}
-                        className="w-full bg-transparent text-white font-mono font-bold text-lg focus:outline-none border-b border-white/10 focus:border-emerald-500"
+                        className="w-full bg-transparent text-gray-900 font-mono font-bold text-lg focus:outline-none border-b border-gray-200 focus:border-emerald-500"
                       />
-                      <span className="text-slate-500">%</span>
+                      <span className="text-gray-400">%</span>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-rose-500/5 border border-rose-500/20 rounded-xl">
-                    <label className="flex items-center gap-2 text-xs font-bold text-rose-400 mb-2">
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl">
+                    <label className="flex items-center gap-2 text-xs font-bold text-rose-600 mb-2">
                       <StopCircle size={14} /> Stop Loss
                     </label>
                     <div className="flex items-center gap-2">
@@ -316,9 +301,9 @@ const BacktestPanel: React.FC = () => {
                         type="number"
                         value={stopLoss}
                         onChange={(e) => setStopLoss(Number(e.target.value))}
-                        className="w-full bg-transparent text-white font-mono font-bold text-lg focus:outline-none border-b border-white/10 focus:border-rose-500"
+                        className="w-full bg-transparent text-gray-900 font-mono font-bold text-lg focus:outline-none border-b border-gray-200 focus:border-rose-500"
                       />
-                      <span className="text-slate-500">%</span>
+                      <span className="text-gray-400">%</span>
                     </div>
                   </div>
                 </div>
@@ -328,9 +313,9 @@ const BacktestPanel: React.FC = () => {
               <button
                 onClick={runBacktest}
                 disabled={loading}
-                className="w-full bg-white text-black hover:bg-slate-200 disabled:opacity-50 font-bold py-4 px-6 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] flex items-center justify-center gap-3 text-lg"
+                className="w-full bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 text-lg"
               >
-                {loading ? <Loader2 className="animate-spin" size={24} /> : <Play size={24} fill="black" />}
+                {loading ? <Loader2 className="animate-spin" size={24} /> : <Play size={24} fill="white" />}
                 {loading ? 'Analysiere Daten...' : 'Simulation Starten'}
               </button>
             </div>
@@ -340,25 +325,25 @@ const BacktestPanel: React.FC = () => {
         {/* Results Panel */}
         <div className="xl:col-span-2 space-y-6">
           {!result && !loading && !error && (
-            <div className="glass-panel rounded-3xl p-12 text-center flex flex-col items-center justify-center h-full min-h-[400px] border-dashed border-white/10">
-              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                <BarChart3 className="text-slate-600" size={40} />
+            <div className="bg-white rounded-3xl border border-gray-100 border-dashed p-12 text-center flex flex-col items-center justify-center h-full min-h-[400px] shadow-sm">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <BarChart3 className="text-gray-300" size={40} />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Bereit für Analyse</h3>
-              <p className="text-slate-400 max-w-md mx-auto">Wähle deine Parameter auf der linken Seite und starte die Simulation, um zu sehen, wie deine Strategie performt hätte.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Bereit für Analyse</h3>
+              <p className="text-gray-500 max-w-md mx-auto">Wähle deine Parameter auf der linken Seite und starte die Simulation, um zu sehen, wie deine Strategie performt hätte.</p>
             </div>
           )}
 
           {loading && (
-            <div className="glass-panel rounded-3xl p-12 text-center flex flex-col items-center justify-center h-full min-h-[400px]">
-              <Loader2 className="text-primary animate-spin mb-6" size={48} />
-              <h3 className="text-xl font-bold text-white mb-1">Verarbeite historische Daten...</h3>
-              <p className="text-slate-400">Dies kann einen Moment dauern</p>
+            <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center flex flex-col items-center justify-center h-full min-h-[400px] shadow-sm">
+              <Loader2 className="text-gray-400 animate-spin mb-6" size={48} />
+              <h3 className="text-xl font-bold text-gray-900 mb-1">Verarbeite historische Daten...</h3>
+              <p className="text-gray-500">Dies kann einen Moment dauern</p>
             </div>
           )}
 
           {error && (
-            <div className="p-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center gap-4 text-rose-200">
+            <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-4 text-rose-600">
               <XCircle size={24} />
               <div>
                 <h4 className="font-bold">Fehler aufgetreten</h4>
@@ -371,57 +356,57 @@ const BacktestPanel: React.FC = () => {
             <div className="space-y-6 animate-slide-up">
               {/* KPI Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="glass-panel p-5 rounded-2xl flex flex-col">
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Win Rate</span>
-                  <span className={`text-3xl font-bold ${result.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <div className="bg-white border border-gray-100 p-5 rounded-2xl flex flex-col shadow-sm">
+                  <span className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Win Rate</span>
+                  <span className={`text-3xl font-bold ${result.winRate >= 50 ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {result.winRate.toFixed(1)}%
                   </span>
-                  <div className="w-full bg-white/10 h-1 mt-auto rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-100 h-1 mt-auto rounded-full overflow-hidden">
                     <div className={`h-full ${result.winRate >= 50 ? 'bg-emerald-400' : 'bg-rose-400'}`} style={{ width: `${result.winRate}%` }}></div>
                   </div>
                 </div>
 
-                <div className="glass-panel p-5 rounded-2xl flex flex-col">
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Profit</span>
-                  <span className={`text-3xl font-bold ${result.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <div className="bg-white border border-gray-100 p-5 rounded-2xl flex flex-col shadow-sm">
+                  <span className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Total Profit</span>
+                  <span className={`text-3xl font-bold ${result.totalProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {result.totalProfit >= 0 ? '+' : ''}{result.totalProfit.toFixed(2)}%
                   </span>
                 </div>
 
-                <div className="glass-panel p-5 rounded-2xl flex flex-col">
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Trades</span>
+                <div className="bg-white border border-gray-100 p-5 rounded-2xl flex flex-col shadow-sm">
+                  <span className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Trades</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white">{result.totalTrades}</span>
-                    <span className="text-emerald-400 text-sm font-bold">{result.winningTrades} W</span>
-                    <span className="text-rose-400 text-sm font-bold">{result.losingTrades} L</span>
+                    <span className="text-3xl font-bold text-gray-900">{result.totalTrades}</span>
+                    <span className="text-emerald-500 text-sm font-bold">{result.winningTrades} W</span>
+                    <span className="text-rose-500 text-sm font-bold">{result.losingTrades} L</span>
                   </div>
                 </div>
 
-                <div className="glass-panel p-5 rounded-2xl flex flex-col">
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Risiko/Reward</span>
+                <div className="bg-white border border-gray-100 p-5 rounded-2xl flex flex-col shadow-sm">
+                  <span className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Risiko/Reward</span>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Ø Win</span>
-                      <span className="text-emerald-400 font-mono">+{result.averageProfit.toFixed(2)}%</span>
+                      <span className="text-gray-400">Ø Win</span>
+                      <span className="text-emerald-500 font-mono">+{result.averageProfit.toFixed(2)}%</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Ø Loss</span>
-                      <span className="text-rose-400 font-mono">{result.averageLoss.toFixed(2)}%</span>
+                      <span className="text-gray-400">Ø Loss</span>
+                      <span className="text-rose-500 font-mono">{result.averageLoss.toFixed(2)}%</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Trade History Table */}
-              <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
-                <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-                  <h3 className="font-bold text-white">Letzte Trades</h3>
-                  <span className="text-xs text-slate-400 font-mono">{result.trades.length} angezeigt</span>
+              <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                  <h3 className="font-bold text-gray-900">Letzte Trades</h3>
+                  <span className="text-xs text-gray-400 font-mono">{result.trades.length} angezeigt</span>
                 </div>
 
                 <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-left text-sm text-slate-300">
-                    <thead className="text-xs uppercase text-slate-500 font-medium bg-black/20 sticky top-0 backdrop-blur-md">
+                  <table className="w-full text-left text-sm text-gray-600">
+                    <thead className="text-xs uppercase text-gray-400 font-medium bg-gray-50/80 sticky top-0">
                       <tr>
                         <th className="px-6 py-3">Datum</th>
                         <th className="px-6 py-3">Signal</th>
@@ -429,25 +414,25 @@ const BacktestPanel: React.FC = () => {
                         <th className="px-6 py-3 text-right">Ergebnis</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-gray-50">
                       {result.trades.map((trade, i) => (
-                        <tr key={i} className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-mono text-xs text-slate-400">
+                        <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4 font-mono text-xs text-gray-400">
                             {new Date(trade.entryDate).toLocaleDateString('de-DE')}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex flex-col">
-                              <span className="text-xs font-bold text-primary">RSI {trade.rsiAtEntry.toFixed(0)}</span>
-                              <span className="text-[10px] text-slate-500">{trade.exitReason === 'take-profit' ? 'TP Hit' : 'SL Hit'}</span>
+                              <span className="text-xs font-bold text-gray-700">RSI {trade.rsiAtEntry.toFixed(0)}</span>
+                              <span className="text-[10px] text-gray-400">{trade.exitReason === 'take-profit' ? 'TP Hit' : 'SL Hit'}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right font-mono text-xs">
-                            <div className="text-slate-300">${trade.entryPrice.toLocaleString()}</div>
-                            <div className="text-slate-500">↓</div>
-                            <div className="text-white">${trade.exitPrice.toLocaleString()}</div>
+                            <div className="text-gray-500">${trade.entryPrice.toLocaleString()}</div>
+                            <div className="text-gray-300">↓</div>
+                            <div className="text-gray-900">${trade.exitPrice.toLocaleString()}</div>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <span className={`inline-flex items-center gap-1 font-bold font-mono px-2 py-1 rounded-lg ${trade.outcome === 'win' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            <span className={`inline-flex items-center gap-1 font-bold font-mono px-2 py-1 rounded-lg ${trade.outcome === 'win' ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' : 'bg-rose-50 text-rose-500 border border-rose-100'}`}>
                               {trade.outcome === 'win' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                               {trade.profitPercent >= 0 ? '+' : ''}{trade.profitPercent.toFixed(2)}%
                             </span>

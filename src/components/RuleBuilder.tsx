@@ -19,7 +19,6 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
     { id: '1', indicator: 'RSI', operator: 'LESS_THAN', threshold: 30 }
   ]);
 
-  // Load edit data
   useEffect(() => {
     if (editRule) {
       setAssetId(editRule.assetId);
@@ -29,7 +28,6 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
       if (editRule.conditions && editRule.conditions.length > 0) {
         setConditions(editRule.conditions);
       } else {
-        // Fallback for legacy rules
         setConditions([{
           id: '1',
           indicator: editRule.indicator,
@@ -63,11 +61,9 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
       id: editRule?.id || Date.now().toString(),
       assetId,
       timeframe,
-      // Legacy fields filled with first condition for compat
       indicator: mainCondition.indicator,
       operator: mainCondition.operator,
       threshold: mainCondition.threshold,
-      // New fields
       conditions,
       logic,
       active: editRule?.active ?? true
@@ -81,10 +77,10 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
   };
 
   return (
-    <div className="bg-surface w-full max-w-2xl rounded-2xl border border-subtle p-6 animate-fade-in max-h-[90vh] overflow-y-auto">
-      <div className="flex justify-between items-center mb-6 sticky top-0 bg-surface pb-2 z-10 border-b border-subtle">
-        <h3 className="text-white font-bold text-xl">{editRule ? 'Alarm bearbeiten' : 'Neuer Profi-Alarm'}</h3>
-        <button onClick={onCancel} className="p-2 bg-zinc-900 rounded-full text-zinc-500 hover:text-white transition-colors">
+    <div className="bg-white w-full max-w-2xl rounded-2xl border border-gray-200 p-6 animate-fade-in max-h-[90vh] overflow-y-auto shadow-xl">
+      <div className="flex justify-between items-center mb-6 sticky top-0 bg-white pb-2 z-10 border-b border-gray-100">
+        <h3 className="text-gray-900 font-bold text-xl">{editRule ? 'Alarm bearbeiten' : 'Neuer Profi-Alarm'}</h3>
+        <button onClick={onCancel} className="p-2 bg-gray-100 rounded-full text-gray-400 hover:text-gray-700 transition-colors">
           <X size={20} />
         </button>
       </div>
@@ -93,9 +89,9 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
         {/* Global Settings */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-zinc-500 text-xs font-medium uppercase mb-2 block">Asset</label>
+            <label className="text-gray-400 text-xs font-medium uppercase mb-2 block">Asset</label>
             <select
-              className="w-full bg-zinc-900 border border-subtle p-3 rounded-xl text-white focus:border-primary focus:outline-none transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-gray-900 focus:border-gray-400 focus:outline-none transition-colors"
               value={assetId}
               onChange={e => setAssetId(e.target.value)}
             >
@@ -104,9 +100,9 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
             </select>
           </div>
           <div>
-            <label className="text-zinc-500 text-xs font-medium uppercase mb-2 block">Zeitrahmen</label>
+            <label className="text-gray-400 text-xs font-medium uppercase mb-2 block">Zeitrahmen</label>
             <select
-              className="w-full bg-zinc-900 border border-subtle p-3 rounded-xl text-white focus:border-primary focus:outline-none transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-gray-900 focus:border-gray-400 focus:outline-none transition-colors"
               value={timeframe}
               onChange={e => setTimeframe(e.target.value as Timeframe)}
             >
@@ -118,14 +114,14 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
           </div>
         </div>
 
-        <div className="bg-zinc-900/30 rounded-xl p-4 border border-subtle/50">
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
           <div className="flex justify-between items-center mb-4">
-            <label className="text-zinc-400 text-xs font-medium uppercase">Bedingungen</label>
+            <label className="text-gray-500 text-xs font-medium uppercase">Bedingungen</label>
             {conditions.length > 1 && (
               <select
                 value={logic}
                 onChange={(e) => setLogic(e.target.value as 'AND' | 'OR')}
-                className="bg-zinc-950 text-xs border border-subtle rounded px-2 py-1 text-primary cursor-pointer"
+                className="bg-white text-xs border border-gray-200 rounded px-2 py-1 text-gray-700 cursor-pointer"
               >
                 <option value="AND">UND (Alle müssen eintreffen)</option>
                 <option value="OR">ODER (Eine muss eintreffen)</option>
@@ -135,9 +131,9 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
 
           <div className="space-y-3">
             {conditions.map((condition, index) => (
-              <div key={condition.id} className="bg-zinc-950 rounded-xl p-3 border border-subtle relative group">
+              <div key={condition.id} className="bg-white rounded-xl p-3 border border-gray-200 relative group">
                 {index > 0 && (
-                  <div className="absolute -top-3 left-6 bg-zinc-800 text-[10px] px-2 rounded text-zinc-400 border border-zinc-700 z-10">
+                  <div className="absolute -top-3 left-6 bg-gray-100 text-[10px] px-2 rounded text-gray-500 border border-gray-200 z-10">
                     {logic === 'AND' ? 'UND' : 'ODER'}
                   </div>
                 )}
@@ -147,13 +143,13 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
                     <div className="grid grid-cols-2 gap-1 mb-2">
                       <button
                         onClick={() => updateCondition(condition.id, { indicator: 'RSI', operator: 'LESS_THAN', threshold: 30 })}
-                        className={`p-2 rounded-lg text-xs font-bold border transition-colors ${condition.indicator === 'RSI' ? 'bg-primary/20 border-primary text-primary' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}
+                        className={`p-2 rounded-lg text-xs font-bold border transition-colors ${condition.indicator === 'RSI' ? 'bg-gray-900 border-gray-900 text-white' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                       >
                         RSI
                       </button>
                       <button
                         onClick={() => updateCondition(condition.id, { indicator: 'MACD', operator: 'CROSS_ABOVE' })}
-                        className={`p-2 rounded-lg text-xs font-bold border transition-colors ${condition.indicator === 'MACD' ? 'bg-primary/20 border-primary text-primary' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}
+                        className={`p-2 rounded-lg text-xs font-bold border transition-colors ${condition.indicator === 'MACD' ? 'bg-gray-900 border-gray-900 text-white' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                       >
                         MACD
                       </button>
@@ -163,7 +159,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
                   {/* Operator & Threshold */}
                   <div className="flex-1 space-y-2">
                     <select
-                      className="w-full bg-zinc-900 border border-subtle p-2 rounded-lg text-sm text-zinc-300 focus:border-primary focus:outline-none"
+                      className="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
                       value={condition.operator}
                       onChange={e => updateCondition(condition.id, { operator: e.target.value as ComparisonOperator })}
                     >
@@ -185,7 +181,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
                         type="number"
                         value={condition.threshold}
                         onChange={e => updateCondition(condition.id, { threshold: Number(e.target.value) })}
-                        className="w-full bg-zinc-900 border border-subtle p-2 rounded-lg text-sm text-white focus:border-primary focus:outline-none"
+                        className="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
                         placeholder="Wert..."
                       />
                     )}
@@ -195,7 +191,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
                   <button
                     onClick={() => removeCondition(condition.id)}
                     disabled={conditions.length === 1}
-                    className="p-2 text-zinc-600 hover:text-rose-500 disabled:opacity-20 transition-colors"
+                    className="p-2 text-gray-400 hover:text-rose-500 disabled:opacity-20 transition-colors"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -206,7 +202,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
             {conditions.length < 3 && (
               <button
                 onClick={addCondition}
-                className="w-full py-2 border border-dashed border-subtle rounded-xl text-zinc-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all flex justify-center items-center gap-2 text-sm"
+                className="w-full py-2 border border-dashed border-gray-300 rounded-xl text-gray-400 hover:text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-all flex justify-center items-center gap-2 text-sm"
               >
                 <Plus size={14} /> Bedingung hinzufügen
               </button>
@@ -217,7 +213,7 @@ const RuleBuilder: React.FC<RuleBuilderProps> = ({ assets, onAddRule, onUpdateRu
         {/* Save Button */}
         <button
           onClick={handleSave}
-          className="w-full bg-primary hover:bg-lime-400 text-black font-bold p-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+          className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold p-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
         >
           {editRule ? 'Alarm aktualisieren' : 'Alarm erstellen'}
         </button>

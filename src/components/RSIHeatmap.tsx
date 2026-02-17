@@ -13,11 +13,11 @@ type HeatmapTimeframe = '15m' | '1h' | '4h' | '1d' | '1w';
 type MarketType = 'CRYPTO' | 'STOCK';
 
 const RSI_ZONES = [
-    { min: 70, max: 100, label: 'Überkauft', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.12)' },
-    { min: 60, max: 70, label: 'Stark', color: '#fb923c', bgColor: 'rgba(251, 146, 60, 0.08)' },
-    { min: 40, max: 60, label: 'Neutral', color: '#64748b', bgColor: 'rgba(100, 116, 139, 0.05)' },
-    { min: 30, max: 40, label: 'Schwach', color: '#22d3ee', bgColor: 'rgba(34, 211, 238, 0.08)' },
-    { min: 0, max: 30, label: 'Überverkauft', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.12)' },
+    { min: 70, max: 100, label: 'Überkauft', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.08)' },
+    { min: 60, max: 70, label: 'Stark', color: '#fb923c', bgColor: 'rgba(251, 146, 60, 0.05)' },
+    { min: 40, max: 60, label: 'Neutral', color: '#64748b', bgColor: 'rgba(100, 116, 139, 0.03)' },
+    { min: 30, max: 40, label: 'Schwach', color: '#22d3ee', bgColor: 'rgba(34, 211, 238, 0.05)' },
+    { min: 0, max: 30, label: 'Überverkauft', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.08)' },
 ];
 
 const TIMEFRAME_OPTIONS: { value: HeatmapTimeframe; label: string }[] = [
@@ -30,14 +30,12 @@ const TIMEFRAME_OPTIONS: { value: HeatmapTimeframe; label: string }[] = [
 
 const TWELVE_DATA_API_KEY = '7ec0909c64a74e1baef4ba143b67ec35';
 
-// Popular US stocks for RSI heatmap
 const STOCK_LIST = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'V', 'WMT',
     'JNJ', 'PG', 'MA', 'UNH', 'HD', 'DIS', 'BAC', 'ADBE', 'CRM', 'NFLX',
     'PFE', 'CSCO', 'INTC', 'VZ', 'KO', 'PEP', 'MRK', 'ABT', 'T', 'XOM'
 ];
 
-// Calculate RSI from price data
 const calculateRSI = (prices: number[], period: number = 14): number => {
     if (prices.length < period + 1) return 50;
 
@@ -81,8 +79,6 @@ const RSIHeatmap: React.FC = () => {
     const fetchStockData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Sequential fetching with delays to respect rate limit (8 req/min)
-            // Only fetch first 8 stocks to stay within rate limit for one minute
             const stocksToFetch = STOCK_LIST.slice(0, 8);
             const results: RSICoin[] = [];
 
@@ -111,10 +107,8 @@ const RSIHeatmap: React.FC = () => {
                         change24h: change
                     });
 
-                    // Update state progressively so user sees data appearing
                     setCoins([...results]);
 
-                    // Delay between requests (8 req/min = ~7.5s between requests)
                     if (i < stocksToFetch.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 8000));
                     }
@@ -134,17 +128,14 @@ const RSIHeatmap: React.FC = () => {
     const fetchTop100Cryptos = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Get top 100 symbols by volume from Binance
             const tickerRes = await fetch('https://api.binance.com/api/v3/ticker/24hr');
             const tickerData = await tickerRes.json();
 
-            // Filter USDT pairs and sort by volume
             const usdtPairs = tickerData
                 .filter((t: any) => t.symbol.endsWith('USDT') && !t.symbol.includes('UP') && !t.symbol.includes('DOWN'))
                 .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
                 .slice(0, 100);
 
-            // Map timeframe to Binance interval
             const intervalMap: Record<HeatmapTimeframe, string> = {
                 '15m': '15m',
                 '1h': '1h',
@@ -153,7 +144,6 @@ const RSIHeatmap: React.FC = () => {
                 '1w': '1w',
             };
 
-            // Fetch klines for each coin (batch in groups to avoid rate limits)
             const batchSize = 10;
             const allCoins: RSICoin[] = [];
 
@@ -186,7 +176,6 @@ const RSIHeatmap: React.FC = () => {
                 const batchResults = await Promise.all(batchPromises);
                 allCoins.push(...batchResults.filter((c): c is RSICoin => c !== null));
 
-                // Small delay between batches to avoid rate limits
                 if (i + batchSize < usdtPairs.length) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
@@ -221,12 +210,10 @@ const RSIHeatmap: React.FC = () => {
         setMousePos({ x: e.clientX, y: e.clientY });
     };
 
-    // Calculate average RSI
     const avgRSI = coins.length > 0
         ? coins.reduce((sum, c) => sum + c.rsi, 0) / coins.length
         : 50;
 
-    // Count coins per zone
     const zoneCounts = RSI_ZONES.map(zone => ({
         ...zone,
         count: coins.filter(c => c.rsi >= zone.min && c.rsi < zone.max).length,
@@ -238,31 +225,31 @@ const RSIHeatmap: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     {/* Market Type Toggle */}
-                    <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 backdrop-blur-md">
+                    <div className="flex bg-gray-100 border border-gray-200 rounded-xl p-1">
                         <button
                             onClick={() => setMarketType('CRYPTO')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${marketType === 'CRYPTO' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${marketType === 'CRYPTO' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}
                         >
                             <Bitcoin size={16} /> Krypto
                         </button>
                         <button
                             onClick={() => setMarketType('STOCK')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${marketType === 'STOCK' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${marketType === 'STOCK' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}
                         >
                             <BarChart3 size={16} /> Aktien
                         </button>
                     </div>
 
-                    {/* Timeframe Selector - only show for crypto */}
+                    {/* Timeframe Selector */}
                     {marketType === 'CRYPTO' && (
-                        <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 backdrop-blur-md">
+                        <div className="flex bg-gray-100 border border-gray-200 rounded-xl p-1">
                             {TIMEFRAME_OPTIONS.map(opt => (
                                 <button
                                     key={opt.value}
                                     onClick={() => setTimeframe(opt.value)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeframe === opt.value
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        ? 'bg-gray-900 text-white shadow-lg'
+                                        : 'text-gray-400 hover:text-gray-700'
                                         }`}
                                 >
                                     {opt.label}
@@ -273,18 +260,16 @@ const RSIHeatmap: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Last Update */}
                     {lastUpdate && (
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-gray-400">
                             Aktualisiert: {lastUpdate.toLocaleTimeString('de-DE')}
                         </span>
                     )}
 
-                    {/* Refresh Button */}
                     <button
                         onClick={handleRefresh}
                         disabled={isLoading}
-                        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-slate-300 hover:text-white disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition-all text-gray-600 hover:text-gray-900 disabled:opacity-50"
                     >
                         {isLoading ? (
                             <Loader2 size={18} className="animate-spin" />
@@ -298,20 +283,20 @@ const RSIHeatmap: React.FC = () => {
 
             {/* Stats Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <div className="glass-panel rounded-2xl p-4 text-center">
-                    <div className="text-2xl font-bold text-white">{coins.length}</div>
-                    <div className="text-xs text-slate-400 mt-1">Coins geladen</div>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
+                    <div className="text-2xl font-bold text-gray-900">{coins.length}</div>
+                    <div className="text-xs text-gray-400 mt-1">Coins geladen</div>
                 </div>
-                <div className="glass-panel rounded-2xl p-4 text-center">
-                    <div className={`text-2xl font-bold ${avgRSI > 60 ? 'text-red-400' : avgRSI < 40 ? 'text-emerald-400' : 'text-slate-300'}`}>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
+                    <div className={`text-2xl font-bold ${avgRSI > 60 ? 'text-red-500' : avgRSI < 40 ? 'text-emerald-500' : 'text-gray-500'}`}>
                         {avgRSI.toFixed(1)}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">Durchschn. RSI</div>
+                    <div className="text-xs text-gray-400 mt-1">Durchschn. RSI</div>
                 </div>
                 {zoneCounts.slice(0, 4).map(zone => (
-                    <div key={zone.label} className="glass-panel rounded-2xl p-4 text-center">
+                    <div key={zone.label} className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
                         <div className="text-2xl font-bold" style={{ color: zone.color }}>{zone.count}</div>
-                        <div className="text-xs text-slate-400 mt-1">{zone.label}</div>
+                        <div className="text-xs text-gray-400 mt-1">{zone.label}</div>
                     </div>
                 ))}
             </div>
@@ -324,22 +309,22 @@ const RSIHeatmap: React.FC = () => {
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: zone.color }}
                         />
-                        <span className="text-xs text-slate-400">{zone.label}</span>
+                        <span className="text-xs text-gray-500">{zone.label}</span>
                     </div>
                 ))}
             </div>
 
             {/* Heatmap Container */}
             <div
-                className="glass-panel rounded-3xl p-6 relative overflow-hidden"
+                className="bg-white rounded-3xl border border-gray-100 p-6 relative overflow-hidden shadow-sm"
                 onMouseMove={handleMouseMove}
                 style={{ minHeight: '500px' }}
             >
                 {isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
-                            <Loader2 size={48} className="animate-spin text-primary mx-auto mb-4" />
-                            <p className="text-slate-400">Lade Top 100 Kryptos...</p>
+                            <Loader2 size={48} className="animate-spin text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500">Lade Top 100 Kryptos...</p>
                         </div>
                     </div>
                 ) : (
@@ -374,7 +359,7 @@ const RSIHeatmap: React.FC = () => {
                         {/* Y-Axis Labels */}
                         <div className="absolute left-2 top-0 bottom-0 flex flex-col justify-between py-4 pointer-events-none">
                             {[100, 80, 60, 40, 20, 0].map(val => (
-                                <span key={val} className="text-xs text-slate-500 font-mono">{val}</span>
+                                <span key={val} className="text-xs text-gray-400 font-mono">{val}</span>
                             ))}
                         </div>
 
@@ -383,7 +368,6 @@ const RSIHeatmap: React.FC = () => {
                             {coins.map((coin, idx) => {
                                 const zone = getZoneForRSI(coin.rsi);
                                 const yPos = ((100 - coin.rsi) / 100) * 100;
-                                // Use deterministic positioning based on index and symbol hash
                                 const hash = coin.symbol.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
                                 const col = idx % 10;
                                 const xPos = (col / 10) * 85 + ((hash % 50) / 50) * 8 + 5;
@@ -417,10 +401,10 @@ const RSIHeatmap: React.FC = () => {
 
                         {/* Average RSI Line */}
                         <div
-                            className="absolute left-8 right-4 border-t-2 border-dashed border-primary/50 pointer-events-none"
+                            className="absolute left-8 right-4 border-t-2 border-dashed border-gray-400/50 pointer-events-none"
                             style={{ top: `${((100 - avgRSI) / 100) * 100}%` }}
                         >
-                            <span className="absolute right-0 -top-5 text-xs text-primary font-bold bg-slate-900/80 px-2 py-1 rounded">
+                            <span className="absolute right-0 -top-5 text-xs text-gray-600 font-bold bg-white px-2 py-1 rounded border border-gray-100">
                                 Durchschnitt RSI: {avgRSI.toFixed(2)}
                             </span>
                         </div>
@@ -436,7 +420,7 @@ const RSIHeatmap: React.FC = () => {
                             top: mousePos.y + 15,
                         }}
                     >
-                        <div className="glass-panel rounded-xl p-4 shadow-2xl border border-white/20 min-w-[200px]">
+                        <div className="bg-white rounded-xl p-4 shadow-2xl border border-gray-200 min-w-[200px]">
                             <div className="flex items-center gap-3 mb-3">
                                 <div
                                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
@@ -445,14 +429,14 @@ const RSIHeatmap: React.FC = () => {
                                     {hoveredCoin.symbol.slice(0, 3)}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-white">{hoveredCoin.symbol}</div>
-                                    <div className="text-xs text-slate-400">{getZoneForRSI(hoveredCoin.rsi).label}</div>
+                                    <div className="font-bold text-gray-900">{hoveredCoin.symbol}</div>
+                                    <div className="text-xs text-gray-400">{getZoneForRSI(hoveredCoin.rsi).label}</div>
                                 </div>
                             </div>
 
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-slate-400">RSI</span>
+                                    <span className="text-gray-400">RSI</span>
                                     <span
                                         className="font-bold"
                                         style={{ color: getZoneForRSI(hoveredCoin.rsi).color }}
@@ -461,14 +445,14 @@ const RSIHeatmap: React.FC = () => {
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-400">Preis</span>
-                                    <span className="text-white font-mono">
+                                    <span className="text-gray-400">Preis</span>
+                                    <span className="text-gray-900 font-mono">
                                         ${hoveredCoin.price < 1 ? hoveredCoin.price.toFixed(6) : hoveredCoin.price.toFixed(2)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-400">24h</span>
-                                    <span className={`flex items-center gap-1 ${hoveredCoin.change24h >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    <span className="text-gray-400">24h</span>
+                                    <span className={`flex items-center gap-1 ${hoveredCoin.change24h >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                         {hoveredCoin.change24h >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                                         {hoveredCoin.change24h.toFixed(2)}%
                                     </span>

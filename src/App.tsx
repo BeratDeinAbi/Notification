@@ -16,7 +16,7 @@ import WhaleFeed from './components/WhaleFeed';
 import SentimentIndicator from './components/SentimentIndicator';
 import StrategyGuide from './components/StrategyGuide';
 import RSIHeatmap from './components/RSIHeatmap';
-import { Layers, Plus, RefreshCw, Loader2, BellOff, Edit3, Trash2, CheckCircle, Clock, BellRing, LayoutGrid, List, Sun, Moon } from 'lucide-react';
+import { Layers, Plus, RefreshCw, Loader2, BellOff, Edit3, Trash2, CheckCircle, Clock, BellRing, LayoutGrid, List } from 'lucide-react';
 import MobileNavbar from './components/MobileNavbar';
 
 
@@ -137,12 +137,12 @@ const loadSignalsFromStorage = (): Signal[] => {
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'RULES' | 'PORTFOLIO' | 'BACKTEST' | 'STRATEGIES' | 'RSI_MAP'>('DASHBOARD');
-  const [dashboardView, setDashboardView] = useState<'STATS' | 'PRICES'>('PRICES'); // Default to Prices as requested
+  const [dashboardView, setDashboardView] = useState<'STATS' | 'PRICES'>('PRICES');
   const [marketFilter, setMarketFilter] = useState<'CRYPTO' | 'STOCK' | 'COMMODITY'>('CRYPTO');
   const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('4h');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
   const [signals, setSignals] = useState<Signal[]>(loadSignalsFromStorage);
   const [rules, setRules] = useState<AlertRule[]>(loadRulesFromStorage);
   const [isCreatingRule, setIsCreatingRule] = useState(false);
@@ -150,21 +150,7 @@ const App: React.FC = () => {
   const [showDonationModal, setShowDonationModal] = useState<boolean>(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [toasts, setToasts] = useState<ToastProps[]>([]);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const stored = localStorage.getItem('theme');
-    return (stored as 'dark' | 'light') || 'dark';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  const theme = 'light' as const;
 
   const prevAssetsRef = useRef<Asset[]>([]);
 
@@ -193,8 +179,6 @@ const App: React.FC = () => {
 
   useEffect(() => { if ('Notification' in window) setNotificationPermission(Notification.permission); }, []);
 
-  // ... checkCondition and checkAlarms logic (omitted for brevity, assume unchanged)
-  // Central Logic for Checking a Single Condition
   const checkCondition = (asset: Asset, condition: RuleCondition, timeframe: Timeframe, prevAsset?: Asset): { triggered: boolean, value?: number } => {
     let currentValue: number | undefined;
 
@@ -232,7 +216,6 @@ const App: React.FC = () => {
       assetsToCheck.forEach(asset => {
         const prevAsset = previousAssets.find(a => a.id === asset.id);
 
-        // Define conditions (support legacy and new)
         const conditions = rule.conditions || [{
           id: 'legacy', indicator: rule.indicator, operator: rule.operator, threshold: rule.threshold
         } as RuleCondition];
@@ -273,7 +256,6 @@ const App: React.FC = () => {
       const timeframeToBinance: Record<Timeframe, string> = { '15m': '15m', '2h': '2h', '4h': '4h', '1d': '1d', '1w': '1w' };
       const intervals: Timeframe[] = ['15m', '2h', '4h', '1d', '1w'];
 
-      // Fetch Crypto from Binance
       const cryptoPromises = CRYPTO_SYMBOLS.map(async (coin) => {
         const results: any = {};
         await Promise.all(intervals.map(async (interval) => {
@@ -305,7 +287,6 @@ const App: React.FC = () => {
         } as Asset;
       });
 
-      // Fetch Stocks from Twelve Data - sequential to avoid rate limit (8 req/min on free tier)
       const fetchedStocks: Asset[] = [];
       for (let i = 0; i < STOCK_SYMBOLS.length; i++) {
         const stock = STOCK_SYMBOLS[i];
@@ -340,7 +321,6 @@ const App: React.FC = () => {
             macd: { '15m': macdResult, '2h': macdResult, '4h': macdResult, '1d': macdResult, '1w': macdResult }
           } as Asset);
 
-          // Delay between requests to avoid rate limit (8 req/min = 7.5s between requests)
           if (i < STOCK_SYMBOLS.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 8000));
           }
@@ -373,11 +353,9 @@ const App: React.FC = () => {
   const triggeredRules = rules.filter(r => r.triggered);
 
   return (
-    <div className={`flex h-screen font-sans overflow-hidden relative selection:bg-cyan-500/30 selection:text-white transition-colors duration-300 ${theme === 'dark' ? 'bg-[#0a0e17] text-slate-100' : 'bg-[#f8fafc] text-slate-900'}`}>
+    <div className="flex h-screen font-sans overflow-hidden relative selection:bg-gray-300/50 selection:text-black bg-[#c5ccd3] text-gray-900">
 
       <DynamicIsland toasts={toasts} onRemove={removeToast} />
-
-      {/* Background Ambience handled by global CSS on body */}
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
@@ -406,26 +384,26 @@ const App: React.FC = () => {
         {/* Modern Header */}
         <header className="px-8 py-6 flex justify-between items-center">
           <div className="flex flex-col gap-3">
-            <h1 className={`text-2xl font-semibold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              {activeTab === 'RULES' ? 'Alarme' : activeTab === 'PORTFOLIO' ? 'Depot Tracker' : activeTab === 'STRATEGIES' ? 'Strategien & Indikatoren' : activeTab === 'BACKTEST' ? 'Backtesting' : activeTab === 'RSI_MAP' ? 'RSI-Karte' : 'Marktübersicht'}
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              {activeTab === 'RULES' ? 'Alarme' : activeTab === 'PORTFOLIO' ? 'Depot Tracker' : activeTab === 'STRATEGIES' ? 'Strategien & Indikatoren' : activeTab === 'BACKTEST' ? 'Backtesting' : activeTab === 'RSI_MAP' ? 'RSI-Karte' : 'Dashboard'}
             </h1>
 
             {activeTab === 'DASHBOARD' && (
-              <div className="flex p-1 bg-white/[0.03] rounded-xl border border-white/[0.04] w-fit">
+              <div className="flex p-1 bg-white/60 rounded-xl border border-black/5 w-fit shadow-sm">
                 <button
                   onClick={() => setDashboardView('STATS')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${dashboardView === 'STATS' ? 'bg-cyan-500/20 text-cyan-500' : `text-slate-500 ${theme === 'dark' ? 'hover:text-white hover:bg-white/[0.04]' : 'hover:text-black hover:bg-black/[0.04]'}`}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${dashboardView === 'STATS' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   <LayoutGrid size={14} className="inline mr-2" />
                   Insights
                 </button>
                 <button
                   onClick={() => setDashboardView('PRICES')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex gap-2 items-center ${dashboardView === 'PRICES' ? 'bg-cyan-500/20 text-cyan-500' : `text-slate-500 ${theme === 'dark' ? 'hover:text-white hover:bg-white/[0.04]' : 'hover:text-black hover:bg-black/[0.04]'}`}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex gap-2 items-center ${dashboardView === 'PRICES' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   <List size={14} />
                   Kurse
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/20">LIVE</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">LIVE</span>
                 </button>
               </div>
             )}
@@ -433,19 +411,19 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-3">
             {activeTab === 'DASHBOARD' && (
-              <div className={`flex items-center gap-1 p-1 rounded-xl transition-all ${theme === 'dark' ? 'bg-white/[0.03] border-white/[0.04]' : 'bg-black/[0.03] border-black/[0.04]'} border`}>
-                <button onClick={fetchBinanceData} className={`p-2.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:text-cyan-400 hover:bg-white/[0.04]' : 'text-slate-500 hover:text-cyan-600 hover:bg-black/[0.04]'}`}>
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-white/60 border border-black/5 shadow-sm">
+                <button onClick={fetchBinanceData} className="p-2.5 rounded-lg transition-all text-gray-500 hover:text-gray-900 hover:bg-white">
                   {isLoading ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
                 </button>
-                <div className={`w-px h-5 ${theme === 'dark' ? 'bg-white/[0.06]' : 'bg-black/[0.1]'}`}></div>
+                <div className="w-px h-5 bg-black/10"></div>
                 <select
                   value={selectedTimeframe}
                   onChange={(e) => setSelectedTimeframe(e.target.value as Timeframe)}
-                  className="bg-transparent text-sm font-medium focus:outline-none px-3 py-2 cursor-pointer"
+                  className="bg-transparent text-sm font-medium focus:outline-none px-3 py-2 cursor-pointer text-gray-700"
                 >
-                  <option value="15m" className="bg-slate-900">15m</option>
-                  <option value="4h" className="bg-slate-900">4h</option>
-                  <option value="1d" className="bg-slate-900">1D</option>
+                  <option value="15m">15m</option>
+                  <option value="4h">4h</option>
+                  <option value="1d">1D</option>
                 </select>
               </div>
             )}
@@ -454,7 +432,7 @@ const App: React.FC = () => {
               <>
                 <button
                   onClick={requestNotificationPermission}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${notificationPermission === 'granted' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-white/[0.03] border-white/[0.06] text-slate-300 hover:bg-white/[0.06] hover:text-white'}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${notificationPermission === 'granted' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                 >
                   <BellRing size={16} /> {notificationPermission === 'granted' ? 'Aktiv' : 'Aktivieren'}
                 </button>
@@ -463,16 +441,6 @@ const App: React.FC = () => {
                 </button>
               </>
             )}
-
-            <div className={`w-px h-8 mx-2 ${theme === 'dark' ? 'bg-white/[0.06]' : 'bg-black/[0.1]'}`}></div>
-
-            <button
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-xl transition-all border ${theme === 'dark' ? 'bg-white/[0.03] border-white/[0.06] text-amber-400 hover:bg-white/[0.1] hover:text-amber-300' : 'bg-white border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
-              title={theme === 'dark' ? 'Heller Modus' : 'Dunkler Modus'}
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
           </div>
         </header>
 
@@ -485,30 +453,30 @@ const App: React.FC = () => {
                   <div className="space-y-6">
                     {/* Floating Filter Pill */}
                     <div className="flex justify-center mb-8">
-                      <div className="flex bg-black/20 backdrop-blur-xl p-1 rounded-full border border-white/10 shadow-xl">
+                      <div className="flex bg-white/70 backdrop-blur-xl p-1 rounded-full border border-black/5 shadow-md">
                         <button
                           onClick={() => setMarketFilter('CRYPTO')}
-                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${marketFilter === 'CRYPTO' ? 'bg-white text-black shadow-lg scale-105' : 'text-slate-400 hover:text-white'}`}
+                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${marketFilter === 'CRYPTO' ? 'bg-black text-white shadow-lg scale-105' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                           Krypto
                         </button>
                         <button
                           onClick={() => setMarketFilter('STOCK')}
-                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${marketFilter === 'STOCK' ? 'bg-white text-black shadow-lg scale-105' : 'text-slate-400 hover:text-white'}`}
+                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${marketFilter === 'STOCK' ? 'bg-black text-white shadow-lg scale-105' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                           Aktien
                         </button>
                         <button
                           onClick={() => setMarketFilter('COMMODITY')}
-                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${marketFilter === 'COMMODITY' ? 'bg-white text-black shadow-lg scale-105' : 'text-slate-400 hover:text-white'}`}
+                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${marketFilter === 'COMMODITY' ? 'bg-black text-white shadow-lg scale-105' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                           Rohstoffe
                         </button>
                       </div>
                     </div>
 
-                    {/* Bento Grid Layout - REFACTORED */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-min">
+                    {/* Bento Grid Layout */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 auto-rows-min">
                       {/* Fear & Greed - Large Square */}
                       <div className="lg:col-span-2 lg:row-span-2 h-full">
                         <div className="h-full glass-panel rounded-3xl p-1">
@@ -523,7 +491,7 @@ const App: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Whale Feed - Tall Rect or remaining space */}
+                      {/* Whale Feed */}
                       <div className="lg:col-span-2 h-full">
                         <div className="h-full glass-panel rounded-3xl p-6 glass-panel-hover overflow-hidden">
                           {(marketFilter === 'CRYPTO' || marketFilter === 'COMMODITY') && <WhaleFeed type={marketFilter === 'COMMODITY' ? 'CRYPTO' : marketFilter} />}
@@ -537,28 +505,28 @@ const App: React.FC = () => {
                   <div className="space-y-8">
                     <section>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                          <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-lg shadow-orange-500/20">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                          <div className="p-2 bg-black rounded-lg shadow-md">
                             <Layers size={18} className="text-white" />
                           </div>
                           {marketFilter === 'CRYPTO' ? 'Top Krypto Assets' : marketFilter === 'STOCK' ? 'Top Aktien' : 'Rohstoffe'}
                         </h2>
-                        <div className="flex bg-white/5 border border-white/10 rounded-xl p-1">
+                        <div className="flex bg-white/70 border border-black/5 rounded-xl p-1 shadow-sm">
                           <button
                             onClick={() => setMarketFilter('CRYPTO')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${marketFilter === 'CRYPTO' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${marketFilter === 'CRYPTO' ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:text-gray-900 hover:bg-white'}`}
                           >
                             Krypto
                           </button>
                           <button
                             onClick={() => setMarketFilter('STOCK')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${marketFilter === 'STOCK' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${marketFilter === 'STOCK' ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:text-gray-900 hover:bg-white'}`}
                           >
                             Aktien
                           </button>
                         </div>
                       </div>
-                      <div className="glass-panel rounded-3xl border border-white/5 overflow-hidden">
+                      <div className="glass-panel rounded-3xl border border-black/5 overflow-hidden">
                         <AssetTable assets={assets.filter(a => a.type === marketFilter)} timeframe={selectedTimeframe} />
                       </div>
                     </section>
@@ -570,40 +538,38 @@ const App: React.FC = () => {
             {activeTab === 'RULES' && (
               <div className="space-y-8">
                 <section>
-                  <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Clock size={16} className="text-primary" /> Aktive Regeln</h2>
+                  <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Clock size={16} className="text-gray-500" /> Aktive Regeln</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {activeRules.map(r => (
-                      <div key={r.id} className={`glass-panel rounded-2xl p-6 relative group hover:-translate-y-1 transition-all duration-300 ${r.active ? 'animate-pulse-glow' : ''}`}>
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all"></div>
-
+                      <div key={r.id} className={`glass-panel rounded-2xl p-6 relative group hover:-translate-y-1 transition-all duration-300`}>
                         <div className="flex justify-between items-start mb-4 relative z-10">
                           <div>
-                            <span className="font-bold text-lg text-white block">{getAssetLabel(r.assetId)}</span>
-                            <span className="text-xs font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">{r.timeframe}</span>
+                            <span className="font-bold text-lg text-gray-900 block">{getAssetLabel(r.assetId)}</span>
+                            <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">{r.timeframe}</span>
                           </div>
-                          <div className={`w-3 h-3 rounded-full ${r.active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse-dot' : 'bg-slate-700'}`}></div>
+                          <div className={`w-3 h-3 rounded-full ${r.active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse-dot' : 'bg-gray-300'}`}></div>
                         </div>
 
-                        <div className="text-sm text-slate-300 mb-6 space-y-2 relative z-10 min-h-[60px]">
+                        <div className="text-sm text-gray-600 mb-6 space-y-2 relative z-10 min-h-[60px]">
                           {r.conditions?.map((c, i) => (
-                            <div key={i} className="flex gap-2 items-center bg-white/5 p-2 rounded-lg border border-white/5">
-                              <span className="font-mono text-primary font-bold">{c.indicator}</span>
+                            <div key={i} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+                              <span className="font-mono text-gray-900 font-bold">{c.indicator}</span>
                               <span className="text-xs">{c.operator === 'LESS_THAN' ? 'fällt unter' : 'steigt über'}</span>
-                              <span className="font-bold text-white">{c.threshold}</span>
+                              <span className="font-bold text-gray-900">{c.threshold}</span>
                             </div>
                           )) ?? (
-                              <div className="flex gap-2 items-center bg-white/5 p-2 rounded-lg border border-white/5">
-                                <span className="font-mono text-primary font-bold">{r.indicator}</span>
+                              <div className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                <span className="font-mono text-gray-900 font-bold">{r.indicator}</span>
                                 <span className="text-xs">{r.operator}</span>
-                                <span className="font-bold text-white">{r.threshold}</span>
+                                <span className="font-bold text-gray-900">{r.threshold}</span>
                               </div>
                             )}
                         </div>
 
-                        <div className="flex gap-2 relative z-10 pt-4 border-t border-white/5">
-                          <button onClick={() => handleToggleRule(r.id)} className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-slate-400"><BellOff size={16} className="mx-auto" /></button>
-                          <button onClick={() => { setEditingRule(r); setIsCreatingRule(true); }} className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 hover:text-white transition-colors text-slate-400"><Edit3 size={16} className="mx-auto" /></button>
-                          <button onClick={() => handleDeleteRule(r.id)} className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 transition-colors text-slate-400"><Trash2 size={16} className="mx-auto" /></button>
+                        <div className="flex gap-2 relative z-10 pt-4 border-t border-gray-100">
+                          <button onClick={() => handleToggleRule(r.id)} className="flex-1 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-gray-500"><BellOff size={16} className="mx-auto" /></button>
+                          <button onClick={() => { setEditingRule(r); setIsCreatingRule(true); }} className="flex-1 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 hover:text-gray-900 transition-colors text-gray-500"><Edit3 size={16} className="mx-auto" /></button>
+                          <button onClick={() => handleDeleteRule(r.id)} className="flex-1 py-2 rounded-lg bg-gray-50 hover:bg-rose-50 hover:text-rose-500 transition-colors text-gray-500"><Trash2 size={16} className="mx-auto" /></button>
                         </div>
                       </div>
                     ))}
@@ -618,17 +584,17 @@ const App: React.FC = () => {
                 </div>
 
                 {triggeredRules.length > 0 && <section>
-                  <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><CheckCircle size={18} className="text-emerald-500" /> Historie</h2>
+                  <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><CheckCircle size={18} className="text-emerald-500" /> Historie</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {triggeredRules.map(r => (
                       <div key={r.id} className="glass-panel p-4 rounded-xl opacity-60 hover:opacity-100 transition-all border-l-4 border-l-emerald-500">
                         <div className="flex justify-between mb-2">
-                          <span className="font-bold text-white">{getAssetLabel(r.assetId)}</span>
-                          <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Ausgelöst</span>
+                          <span className="font-bold text-gray-900">{getAssetLabel(r.assetId)}</span>
+                          <span className="text-emerald-600 text-xs font-bold uppercase tracking-wider">Ausgelöst</span>
                         </div>
                         <div className="flex gap-2 mt-2">
-                          <button onClick={() => handleResetTriggered(r.id)} className="flex-1 py-2 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 transition-colors font-medium">Reaktivieren</button>
-                          <button onClick={() => handleDeleteRule(r.id)} className="flex-1 py-2 text-xs bg-rose-500/10 text-rose-400 rounded hover:bg-rose-500/20 transition-colors font-medium">Löschen</button>
+                          <button onClick={() => handleResetTriggered(r.id)} className="flex-1 py-2 text-xs bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition-colors font-medium">Reaktivieren</button>
+                          <button onClick={() => handleDeleteRule(r.id)} className="flex-1 py-2 text-xs bg-rose-50 text-rose-600 rounded hover:bg-rose-100 transition-colors font-medium">Löschen</button>
                         </div>
                       </div>
                     ))}
@@ -646,7 +612,7 @@ const App: React.FC = () => {
       </main>
 
       {(isCreatingRule || editingRule) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-md animate-fade-in">
           <RuleBuilder
             assets={assets}
             onAddRule={(r) => { setRules([...rules, r]); setIsCreatingRule(false); }}
